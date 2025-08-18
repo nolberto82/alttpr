@@ -11,4 +11,4 @@ Can view chests/item locations in dungeons.
 
 <img width="256" height="224" alt="alttpr - NoGlitches-open-ganon_xvJoNK51yJ_000" src="https://github.com/user-attachments/assets/8cd7d8a5-f962-467a-8d55-70cfdb011297" />
 
-Can toggle a travel menu by holding L and pressing R
+Can toggle a travel menu by holding L and pressing R(outside only). Down/Up to move and Left/Right to change worlds. Press B to choose location.
