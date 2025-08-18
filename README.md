@@ -1,4 +1,4 @@
-Works with Mesen and Bizhawk's BSNES cores.
+Lua scripts that work with Mesen and Bizhawk's BSNES cores.
 
 <img width="256" height="224" alt="alttpr - NoGlitches-open-ganon_xvJoNK51yJ_002" src="https://github.com/user-attachments/assets/5571888f-1329-47b6-8edb-1ab002de5628" />
 <img width="256" height="224" alt="alttpr - NoGlitches-open-ganon_xvJoNK51yJ_003" src="https://github.com/user-attachments/assets/3687471d-5bf7-468e-929f-0191d7518814" />
