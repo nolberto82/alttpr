@@ -1,3 +1,4 @@
+# Info
 Lua scripts that work with Mesen and Bizhawk's BSNES cores.
 
 <img width="256" height="224" alt="alttpr - NoGlitches-open-ganon_xvJoNK51yJ_002" src="https://github.com/user-attachments/assets/5571888f-1329-47b6-8edb-1ab002de5628" />
@@ -13,4 +14,5 @@ Can view chests/item locations in dungeons.
 
 Can toggle a travel menu by holding L and pressing R(outside only). Down/Up to move and Left/Right to change worlds. Press B to choose location.
 
-Thanks to https://github.com/spannerisms/jpdasm/tree/master was helpful in understanding some functions.
+# Resources
+https://github.com/spannerisms/jpdasm/tree/master
