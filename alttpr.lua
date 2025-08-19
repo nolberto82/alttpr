@@ -138,6 +138,13 @@ local action =
 		end
 	end,
 	[5] = function()
+		if u16(const.MAIN_TASK) == 0x030e or u16(const.MAIN_TASK) == 0x070e then
+			for i = 0, 0x1a do
+				w8(const.OAM_ATTR + i, 0x00)
+			end
+		end
+	end,
+	[6] = function()
 		if u8(const.PAD_NEW_F2) & 0x20 == 0 then return end
 		w8(0x10c, u8(const.MAIN_TASK))
 		w16(const.MAIN_TASK, 0x070e)
@@ -160,17 +167,17 @@ local action =
 		setregister(regs[curremu]["pc"], 0x82881c)
 		map_enabled = true
 	end,
-	[6] = function()
+	[7] = function()
 		if u8(const.INDOORS) == 1 then
 			w16(const.MAIN_TASK, 0x030e)
 			w8(0x13, 0x01)
 			w8(0x200, 0x05)
 		end
 	end,
-	[7] = function()
+	[8] = function()
 		w8(0x8a, u8(0x8a) & 0x3f | u8(0x7ef3ca))
 	end,
-	[8] = function()
+	[9] = function()
 		if u8(const.INDOORS) == 1 and map_enabled then
 			w16(const.MAIN_TASK, 0x030e)
 			w8(0x458, dark_room)
@@ -179,11 +186,11 @@ local action =
 			w8(0x8a, u8(0x8a) & 0x3f | u8(0x7ef3ca))
 		end
 	end,
-	[9] = function()
+	[10] = function()
 		local a = getregister(regs[curremu]["a"])
 		setregister(regs[curremu]["a"], a & 0x3f | u8(0x7ef3ca))
 	end,
-	[10] = function()
+	[11] = function()
 		if world == 2 then
 			w8(0x8a, u8(0x8a) | 0x40)
 			setregister(regs[curremu]["y"], 0x1fe)
@@ -192,7 +199,7 @@ local action =
 		end
 		setregister(regs[curremu]["pc"], 0x8aba76)
 	end,
-	[11] = function()
+	[12] = function()
 		local x = getregister(regs[curremu]["x"])
 		if u8(const.INDOORS) == 1 and x == 7 then
 			local room = u16(0xa0)
@@ -212,12 +219,12 @@ local action =
 			end
 		end
 	end,
-	[12] = function()
+	[13] = function()
 		if u8(const.SUB_TASK) == 0x07 then
 			setregister(regs[curremu]["pc"], 0xf81b)
 		end
 	end,
-	[13] = function()
+	[14] = function()
 		if u16(const.MAIN_TASK) == 0x070e and u8(const.NMI_FLAG) > 0 and u8(const.ZOOM_MODE) == 0 then
 			w8(0x9fc, u8(0x0e) - 4)
 			w8(0x9fd, u8(0x0f) - 3)
@@ -227,7 +234,7 @@ local action =
 			setregister(regs[curremu]["pc"], 0x8abfa2)
 		end
 	end,
-	[14] = function()
+	[15] = function()
 		local retaddr = u16(getregister(regs[curremu]["sp"]) + 2)
 		if retaddr == 0xb3c0 then return end
 		local pos = travelpos[colselect][menuselect[colselect]][2]
@@ -258,15 +265,9 @@ local action =
 		w16(0x61e, u16(0x61c) - 2 & 0xffff)
 		w8(0x7ef3ca, u8(0x7ef3ca) & 0x3f | u8(0x8a) & 0x40)
 	end,
-	[15] = function()
+	[16] = function()
 		local room = u16(0xa0)
 		local screen = u16(0x8a)
-
-		if u16(const.MAIN_TASK) == 0x030e or u16(const.MAIN_TASK) == 0x070e then
-			for i = 0, 0x1a do
-				w8(const.OAM_ATTR + i, 0x00)
-			end
-		end
 
 		local dx = u8(0x40c)
 		if dx ~= 0xff and u16(const.MAIN_TASK) == 0x030e then
@@ -298,10 +299,7 @@ local action =
 					w16(const.MAIN_TASK, 0x000e)
 					w8(0xfc1, 0x01)
 				else
-					if u8(0x10c) == 0x15 then
-						w8(0x10c, 0x09)
-					end
-					w8(const.MAIN_TASK, u8(0x10c))
+					w8(const.MAIN_TASK, 0x09)
 					w8(0xfc1, 0x00)
 				end
 			end
@@ -387,36 +385,38 @@ if curremu == const.GMULATOR or curremu == const.MESEN then
 	addmemcallback(action[2], callbackexec, 0x8abcfa) --map zoom out
 	addmemcallback(action[3], callbackexec, 0x8abb34) --disable zoom toggle
 	addmemcallback(action[4], callbackexec, 0x808053) --disable map number blink
-	addmemcallback(action[5], callbackexec, 0x828801) --open overworld map
-	addmemcallback(action[6], callbackexec, 0x8abc8f) -- open overworld map indoors
-	addmemcallback(action[7], callbackexec, 0x8abca7) -- close overworld map
-	addmemcallback(action[8], callbackexec, 0x8aefd8) -- close dungeon map
-	addmemcallback(action[9], callbackexec, 0x82e9f2) --set world
-	addmemcallback(action[10], callbackexec, 0x8aba6c) -- change world
-	addmemcallback(action[11], callbackexec, 0x8ac3b8) --link's position
-	addmemcallback(action[12], callbackexec, 0x80f806) --link's position
-	addmemcallback(action[13], callbackexec, 0x8abf9d) --draw link low priority
-	addmemcallback(action[14], callbackexec, 0x82ea2f) -- set travel location
-	addeventcallback(action[15], callbackframe)     --update	
+	addmemcallback(action[5], callbackexec, 0x80805d) --set sprites to 8x8
+	addmemcallback(action[6], callbackexec, 0x828801) --open overworld map
+	addmemcallback(action[7], callbackexec, 0x8abc8f) -- open overworld map indoors
+	addmemcallback(action[8], callbackexec, 0x8abca7) -- close overworld map
+	addmemcallback(action[9], callbackexec, 0x8aefd8) -- close dungeon map
+	addmemcallback(action[10], callbackexec, 0x82e9f2) --set world
+	addmemcallback(action[11], callbackexec, 0x8aba6c) -- change world
+	addmemcallback(action[12], callbackexec, 0x8ac3b8) --link's position
+	addmemcallback(action[13], callbackexec, 0x80f806) --link's position
+	addmemcallback(action[14], callbackexec, 0x8abf9d) --draw link low priority
+	addmemcallback(action[15], callbackexec, 0x82ea2f) -- set travel location
+	addeventcallback(action[16], callbackframe)     --update	
 	if curremu == const.MESEN then
 		emu.displayMessage("Script", "Menu")
 	end
-elseif curremu == const.BIZHAWK or curremu == const.SNES9X then
-	addmemcallback(action[1], 0x8abf86) --main
-	addmemcallback(action[2], 0x8abcfa) --map zoom out
-	addmemcallback(action[3], 0x8abb34) --disable zoom toggle
-	addmemcallback(action[4], 0x808053) --disable map number blink
-	addmemcallback(action[5], 0x828801) --open overworld map
-	addmemcallback(action[6], 0x8abc8f) -- open overworld map indoors
-	addmemcallback(action[7], 0x8abca7) -- close overworld map
-	addmemcallback(action[8], 0x8aefd8) -- close dungeon map
-	addmemcallback(action[9], 0x82e9f2) --set world
-	addmemcallback(action[10], 0x8aba6c) -- change world
-	addmemcallback(action[11], 0x8ac3b8) --link's position
-	addmemcallback(action[12], 0x80f806) --link's position
-	addmemcallback(action[13], 0x8abf9d) --draw link low priority
-	addmemcallback(action[14], 0x82ea2f) -- set travel location
-	addeventcallback(action[15])      --update	
+elseif curremu == const.BIZHAWK then
+	addmemcallback(action[1], callbackexec, 0x8abf86) --main
+	addmemcallback(action[2], callbackexec, 0x8abcfa) --map zoom out
+	addmemcallback(action[3], callbackexec, 0x8abb34) --disable zoom toggle
+	addmemcallback(action[4], callbackexec, 0x808053) --disable map number blink
+	addmemcallback(action[5], callbackexec, 0x80805d) --set sprites to 8x8
+	addmemcallback(action[6], callbackexec, 0x828801) --open overworld map
+	addmemcallback(action[7], callbackexec, 0x8abc8f) -- open overworld map indoors
+	addmemcallback(action[8], callbackexec, 0x8abca7) -- close overworld map
+	addmemcallback(action[9], callbackexec, 0x8aefd8) -- close dungeon map
+	addmemcallback(action[10], callbackexec, 0x82e9f2) --set world
+	addmemcallback(action[11], callbackexec, 0x8aba6c) -- change world
+	addmemcallback(action[12], callbackexec, 0x8ac3b8) --link's position
+	addmemcallback(action[13], callbackexec, 0x80f806) --link's position
+	addmemcallback(action[14], callbackexec, 0x8abf9d) --draw link low priority
+	addmemcallback(action[15], callbackexec, 0x82ea2f) -- set travel location
+	addeventcallback(action[16], callbackframe)     --update
 	while true do
 		emu.frameadvance()
 	end
