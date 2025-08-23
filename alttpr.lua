@@ -134,6 +134,8 @@ local action =
 	[3] = function() setregister(regs[curremu]["a"], 0x00) end,
 	[4] = function()
 		if u8(const.SUB_TASK) == 7 and u8(const.NMI_FLAG) > 0 and u8(const.ZOOM_MODE) == 0 then
+			local v = u8(0x1a)
+			w8(0x1a, 0xff)
 			setregister(regs[curremu]["pc"], 0x8056)
 		end
 	end,
@@ -193,13 +195,20 @@ local action =
 	[11] = function()
 		if world == 2 then
 			w8(0x8a, u8(0x8a) | 0x40)
+			w8(0xfff, 1)
 			setregister(regs[curremu]["y"], 0x1fe)
 		else
 			w8(0x8a, u8(0x8a) & 0x3f)
+			w8(0xfff, 0)
 		end
 		setregister(regs[curremu]["pc"], 0x8aba76)
 	end,
 	[12] = function()
+		if u8(0x8a) & 0x40 > 0 then
+			--setregister(regs[curremu]["a"], 7)
+		end
+	end,
+	[13] = function()
 		local x = getregister(regs[curremu]["x"])
 		if u8(const.INDOORS) == 1 and x == 7 then
 			local room = u16(0xa0)
@@ -219,12 +228,12 @@ local action =
 			end
 		end
 	end,
-	[13] = function()
+	[14] = function()
 		if u8(const.SUB_TASK) == 0x07 then
 			setregister(regs[curremu]["pc"], 0xf81b)
 		end
 	end,
-	[14] = function()
+	[15] = function()
 		if u16(const.MAIN_TASK) == 0x070e and u8(const.NMI_FLAG) > 0 and u8(const.ZOOM_MODE) == 0 then
 			w8(0x9fc, u8(0x0e) - 4)
 			w8(0x9fd, u8(0x0f) - 3)
@@ -234,7 +243,7 @@ local action =
 			setregister(regs[curremu]["pc"], 0x8abfa2)
 		end
 	end,
-	[15] = function()
+	[16] = function()
 		local retaddr = u16(getregister(regs[curremu]["sp"]) + 2)
 		if retaddr == 0xb3c0 then return end
 		local pos = travelpos[colselect][menuselect[colselect]][2]
@@ -265,7 +274,7 @@ local action =
 		w16(0x61e, u16(0x61c) - 2 & 0xffff)
 		w8(0x7ef3ca, u8(0x7ef3ca) & 0x3f | u8(0x8a) & 0x40)
 	end,
-	[16] = function()
+	[17] = function()
 		local room = u16(0xa0)
 		local screen = u16(0x8a)
 
@@ -342,16 +351,11 @@ local action =
 			end
 
 			local c = colselect
-			if u8(const.PAD_NEW_F0) & 0x0c > 0 then
-				dpad_counter = dpad_counter + 1
-			else
-				dpad_counter = 0
-			end
 
-			if u8(const.PAD_NEW_F0) & 4 > 0 and dpad_counter % 6 == 0 then
+			if u8(const.PAD_OLD_F4) & 4 > 0 then
 				menuselect[c] = menuselect[c] + 1
 				if menuselect[c] > #travelpos[c] then menuselect[c] = 1 end
-			elseif u8(const.PAD_NEW_F0) & 8 > 0 and dpad_counter % 6 == 0 then
+			elseif u8(const.PAD_OLD_F4) & 8 > 0 then
 				menuselect[c] = menuselect[c] - 1
 				if menuselect[c] < 1 then menuselect[c] = #travelpos[c] end
 			elseif u8(const.PAD_OLD_F4) & 1 > 0 or u8(const.PAD_OLD_F4) & 2 > 0 then
@@ -384,7 +388,7 @@ if curremu == const.GMULATOR or curremu == const.MESEN then
 	addmemcallback(action[1], callbackexec, 0x8abf86) --main
 	addmemcallback(action[2], callbackexec, 0x8abcfa) --map zoom out
 	addmemcallback(action[3], callbackexec, 0x8abb34) --disable zoom toggle
-	addmemcallback(action[4], callbackexec, 0x808053) --disable map number blink
+	addmemcallback(action[4], callbackexec, 0x808053) --disable overworld map frame counter
 	addmemcallback(action[5], callbackexec, 0x80805d) --set sprites to 8x8
 	addmemcallback(action[6], callbackexec, 0x828801) --open overworld map
 	addmemcallback(action[7], callbackexec, 0x8abc8f) -- open overworld map indoors
@@ -392,32 +396,42 @@ if curremu == const.GMULATOR or curremu == const.MESEN then
 	addmemcallback(action[9], callbackexec, 0x8aefd8) -- close dungeon map
 	addmemcallback(action[10], callbackexec, 0x82e9f2) --set world
 	addmemcallback(action[11], callbackexec, 0x8aba6c) -- change world
-	addmemcallback(action[12], callbackexec, 0x8ac3b8) --link's position
-	addmemcallback(action[13], callbackexec, 0x80f806) --link's position
-	addmemcallback(action[14], callbackexec, 0x8abf9d) --draw link low priority
-	addmemcallback(action[15], callbackexec, 0x82ea2f) -- set travel location
-	addeventcallback(action[16], callbackframe)     --update	
+	addmemcallback(action[12], callbackexec, 0x8ac01e) -- draw correct pendants/crystals
+	addmemcallback(action[13], callbackexec, 0x8ac3b8) --link's position
+	addmemcallback(action[14], callbackexec, 0x80f806) --link's position
+	addmemcallback(action[15], callbackexec, 0x8abf9d) --draw link low priority
+	addmemcallback(action[16], callbackexec, 0x82ea2f) -- set travel location
+	addeventcallback(action[17], callbackframe)     --update	
+
 	if curremu == const.MESEN then
 		emu.displayMessage("Script", "Menu")
 	end
 elseif curremu == const.BIZHAWK then
-	addmemcallback(action[1], callbackexec, 0x8abf86) --main
-	addmemcallback(action[2], callbackexec, 0x8abcfa) --map zoom out
-	addmemcallback(action[3], callbackexec, 0x8abb34) --disable zoom toggle
-	addmemcallback(action[4], callbackexec, 0x808053) --disable map number blink
-	addmemcallback(action[5], callbackexec, 0x80805d) --set sprites to 8x8
-	addmemcallback(action[6], callbackexec, 0x828801) --open overworld map
-	addmemcallback(action[7], callbackexec, 0x8abc8f) -- open overworld map indoors
-	addmemcallback(action[8], callbackexec, 0x8abca7) -- close overworld map
-	addmemcallback(action[9], callbackexec, 0x8aefd8) -- close dungeon map
-	addmemcallback(action[10], callbackexec, 0x82e9f2) --set world
-	addmemcallback(action[11], callbackexec, 0x8aba6c) -- change world
-	addmemcallback(action[12], callbackexec, 0x8ac3b8) --link's position
-	addmemcallback(action[13], callbackexec, 0x80f806) --link's position
-	addmemcallback(action[14], callbackexec, 0x8abf9d) --draw link low priority
-	addmemcallback(action[15], callbackexec, 0x82ea2f) -- set travel location
-	addeventcallback(action[16], callbackframe)     --update
+	addmemcallback(action[1], 0x8abf86) --main
+	addmemcallback(action[2], 0x8abcfa) --map zoom out
+	addmemcallback(action[3], 0x8abb34) --disable zoom toggle
+	addmemcallback(action[4], 0x808053) --disable overworld map frame counter
+	--addmemcallback(action[5], 0x80805d) --set sprites to 8x8
+	addmemcallback(action[6], 0x828801) --open overworld map
+	addmemcallback(action[7], 0x8abc8f) -- open overworld map indoors
+	addmemcallback(action[8], 0x8abca7) -- close overworld map
+	addmemcallback(action[9], 0x8aefd8) -- close dungeon map
+	addmemcallback(action[10], 0x82e9f2) --set world
+	addmemcallback(action[11], 0x8aba6c) -- change world
+	addmemcallback(action[12], 0x8ac01e) -- draw correct pendants/crystals
+	addmemcallback(action[13], 0x8ac3b8) --link's position
+	addmemcallback(action[14], 0x80f806) --link's position
+	addmemcallback(action[15], 0x8abf9d) --draw link low priority
+	addmemcallback(action[16], 0x82ea2f) -- set travel location
+	addeventcallback(action[17])      --update
+
 	while true do
+		if u16(const.MAIN_TASK) == 0x030e or u16(const.MAIN_TASK) == 0x070e then
+			for i = 0, 0x1a do
+				w8(const.OAM_ATTR + i, 0x00)
+			end
+		end
+
 		emu.frameadvance()
 	end
 end
