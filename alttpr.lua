@@ -280,7 +280,6 @@ local action =
 
 		local dx = u8(0x40c)
 		if dx ~= 0xff and u16(const.MAIN_TASK) == 0x030e then
-			--emu.log(string.format("%x - { 0x%x, 0x%x }", room * 2, u8(0x824), u8(0x825)))
 			sprite_index = 0x100
 			for i, v in ipairs(itemsxy[dx / 2 + 1]) do
 				local b = (u16(0x7ef000 + v[5]) & 0xff0) >> 4
@@ -300,31 +299,29 @@ local action =
 			end
 		end
 
-		--travel menu
-		if u8(const.INDOORS) == 0 and u8(const.SUB_TASK) == 0 or u8(const.SUB_TASK) == 6 then
-			--activate bird travel
-			if u8(const.PAD_NEW_F2) & 0x20 > 0 and u8(const.PAD_OLD_F6) & 0x10 > 0 then
-				if u8(const.MAIN_TASK) ~= 0x0e then
-					w16(const.MAIN_TASK, 0x000e)
-					w8(0xfc1, 0x01)
-				else
-					w8(const.MAIN_TASK, 0x09)
-					w8(0xfc1, 0x00)
+		if screen ~= 0x80 and screen ~= 0x81 then
+			--travel menu
+			if u8(const.INDOORS) == 0 and u8(const.SUB_TASK) == 0 or u8(const.SUB_TASK) == 6 then
+				--activate bird travel
+				if u8(const.PAD_NEW_F2) & 0x20 > 0 and u8(const.PAD_OLD_F6) & 0x10 > 0 then
+					if u8(const.MAIN_TASK) ~= 0x0e then
+						w16(const.MAIN_TASK, 0x000e)
+						w8(0xfc1, 0x01)
+					else
+						w8(const.MAIN_TASK, 0x09)
+						w8(0xfc1, 0x00)
+					end
 				end
 			end
 		end
 
 		local xsize = curremu == const.BIZHAWK and 48 or 41
 		local ysize = curremu == const.BIZHAWK and 11 or 10
-		local yr = curremu == const.BIZHAWK and 10 or 9
-		drawrect(5, yr, xsize, ysize, curremu == const.BIZHAWK and 0x7f000000 or 0x7f000000, true)
-		drawtext(5, 10, u8(0x7ef423), "%3d/216", curremu == const.BIZHAWK and 0x00ff00 | 0xff000000 or 0x00ff00,
-			curremu == const.BIZHAWK and 0x000000 or 0xff000000)
 		if u16(const.MAIN_TASK) == 0x000e then
-			local x, y, col, row = 5, 22, 0, 0
-			drawrect(x, y, 256 - x * 2, y - 5, curremu == const.BIZHAWK and 0xff000000 or 0x000000, true)
+			local x, y, col, row = 5, 2, 0, 0
+			drawrect(x, y, 256 - x * 2, y + 15, curremu == const.BIZHAWK and 0xff000000 or 0x000000, true)
 			local fgcolor = curremu == const.BIZHAWK and 0x0080ff | 0xff000000 or 0x0080ff
-			local ty = curremu == const.BIZHAWK and y + 2 or y + 4
+			local ty = curremu == const.BIZHAWK and y + 2 or y + 6
 			for i = 1, #worldnames do
 				drawtext(x + col + 5, ty, worldnames[i], "%s", fgcolor, 0x000000)
 				col = col + 128
@@ -351,7 +348,6 @@ local action =
 			end
 
 			local c = colselect
-
 			if u8(const.PAD_OLD_F4) & 4 > 0 then
 				menuselect[c] = menuselect[c] + 1
 				if menuselect[c] > #travelpos[c] then menuselect[c] = 1 end
@@ -365,6 +361,13 @@ local action =
 				w8(0x200, 0x06)
 			end
 		end
+
+		local yr = curremu == const.BIZHAWK and 10 or 9
+		local xi = u16(const.MAIN_TASK) == 0x000e and 80 or 5
+		local yi = u16(const.MAIN_TASK) == 0x000e and 8 or 10
+		drawrect(xi, yr, xsize, ysize, curremu == const.BIZHAWK and 0x7f000000 or 0x7f000000, true)
+		drawtext(xi, yi, u8(0x7ef423), "%3d/216", curremu == const.BIZHAWK and 0x00ff00 | 0xff000000 or 0x00ff00,
+			curremu == const.BIZHAWK and 0x000000 or 0xff000000)
 
 		if curremu == const.MESEN then
 			drawtext(100, 0, room * 2, "Room:%X")
