@@ -7,6 +7,8 @@ local dark_room = 0
 local menuselect = { 1, 1 }
 local colselect = 1
 local dpad_counter = 0
+local dpad_pressed = 0
+local customtravel = false
 
 local rooms = { item_rooms_data_lw, item_rooms_data_dw }
 local overworld = { item_ow_data_01_lw, item_ow_data_01_dw }
@@ -51,7 +53,7 @@ function log(s)
 end
 
 function getworld()
-	if u8(0x8a) & 0x40 == 0 then return 1 else return 2 end
+	if u8(0x7ef3ca) & 0x40 == 0 then return 1 else return 2 end
 end
 
 function copy_sprite0()
@@ -112,7 +114,7 @@ function main()
 end
 
 function mapinput()
-	if u8(const.PAD_OLD_F4) == 1 or u8(const.PAD_OLD_F4) == 2 then
+	if u8(const.PAD_OLD_F4) == const.RIGHT or u8(const.PAD_OLD_F4) == const.LEFT then
 		world = world ~ 3
 		w16(const.MAIN_TASK, 0x070e)
 		w8(0x200, 0x01)
@@ -123,8 +125,6 @@ function mapinput()
 		end
 	end
 end
-
-world = getworld()
 
 --function () end,
 local action =
@@ -167,6 +167,7 @@ local action =
 		end
 
 		setregister(regs[curremu]["pc"], 0x82881c)
+		world = getworld()
 		map_enabled = true
 	end,
 	[7] = function()
@@ -174,6 +175,7 @@ local action =
 			w16(const.MAIN_TASK, 0x030e)
 			w8(0x13, 0x01)
 			w8(0x200, 0x05)
+			world = getworld()
 		end
 	end,
 	[8] = function()
@@ -184,29 +186,24 @@ local action =
 			w16(const.MAIN_TASK, 0x030e)
 			w8(0x458, dark_room)
 			map_enabled = false
-			world = 1
 			w8(0x8a, u8(0x8a) & 0x3f | u8(0x7ef3ca))
 		end
 	end,
 	[10] = function()
+		world = getworld()
+	end,
+	[11] = function()
 		local a = getregister(regs[curremu]["a"])
 		setregister(regs[curremu]["a"], a & 0x3f | u8(0x7ef3ca))
 	end,
-	[11] = function()
+	[12] = function()
 		if world == 2 then
 			w8(0x8a, u8(0x8a) | 0x40)
-			w8(0xfff, 1)
 			setregister(regs[curremu]["y"], 0x1fe)
 		else
 			w8(0x8a, u8(0x8a) & 0x3f)
-			w8(0xfff, 0)
 		end
 		setregister(regs[curremu]["pc"], 0x8aba76)
-	end,
-	[12] = function()
-		if u8(0x8a) & 0x40 > 0 then
-			--setregister(regs[curremu]["a"], 7)
-		end
 	end,
 	[13] = function()
 		local x = getregister(regs[curremu]["x"])
@@ -244,35 +241,38 @@ local action =
 		end
 	end,
 	[16] = function()
-		local retaddr = u16(getregister(regs[curremu]["sp"]) + 2)
-		if retaddr == 0xb3c0 then return end
-		local pos = travelpos[colselect][menuselect[colselect]][2]
-		w16(0x00e6, pos[1])
-		w16(0x00e8, pos[1])
-		w16(0x0122, pos[1])
-		w16(0x0124, pos[1])
-		w16(0x00e0, pos[2])
-		w16(0x00e2, pos[2])
-		w16(0x011e, pos[2])
-		w16(0x0120, pos[2])
-		w16(0x0020, pos[3])
-		w16(0x0022, pos[4])
-		w16(0x0624, pos[5])
-		w16(0x626, 0 - u16(0x624) & 0xffff)
-		w16(0x0628, pos[6])
-		w16(0x62a, 0 - u16(0x628) & 0xffff)
-		w16(0x008a, pos[7])
-		w16(0x040a, pos[7])
-		w16(0x0084, pos[8])
-		local a = ((pos[8] - 0x400) & 0xf80) * 2
-		w16(0x0088, (a >> 8 | a << 8) & 0xffff)
-		a = ((pos[8] - 0x10) & 0x3e) // 2
-		w16(0x0086, a)
-		w16(0x0618, pos[9])
-		w16(0x61a, u16(0x618) - 2 & 0xffff)
-		w16(0x061c, pos[10])
-		w16(0x61e, u16(0x61c) - 2 & 0xffff)
-		w8(0x7ef3ca, u8(0x7ef3ca) & 0x3f | u8(0x8a) & 0x40)
+		--local retaddr = u16(getregister(regs[curremu]["sp"]) + 2)
+		--if retaddr == 0xb3c0 then return end
+		if customtravel then
+			local pos = travelpos[colselect][menuselect[colselect]][2]
+			w16(0x00e6, pos[1])
+			w16(0x00e8, pos[1])
+			w16(0x0122, pos[1])
+			w16(0x0124, pos[1])
+			w16(0x00e0, pos[2])
+			w16(0x00e2, pos[2])
+			w16(0x011e, pos[2])
+			w16(0x0120, pos[2])
+			w16(0x0020, pos[3])
+			w16(0x0022, pos[4])
+			w16(0x0624, pos[5])
+			w16(0x626, 0 - u16(0x624) & 0xffff)
+			w16(0x0628, pos[6])
+			w16(0x62a, 0 - u16(0x628) & 0xffff)
+			w16(0x008a, pos[7])
+			w16(0x040a, pos[7])
+			w16(0x0084, pos[8])
+			local a = ((pos[8] - 0x400) & 0xf80) * 2
+			w16(0x0088, (a >> 8 | a << 8) & 0xffff)
+			a = ((pos[8] - 0x10) & 0x3e) // 2
+			w16(0x0086, a)
+			w16(0x0618, pos[9])
+			w16(0x61a, u16(0x618) - 2 & 0xffff)
+			w16(0x061c, pos[10])
+			w16(0x61e, u16(0x61c) - 2 & 0xffff)
+			w8(0x7ef3ca, u8(0x7ef3ca) & 0x3f | u8(0x8a) & 0x40)
+			customtravel = false
+		end
 	end,
 	[17] = function()
 		local room = u16(0xa0)
@@ -317,54 +317,64 @@ local action =
 
 		local xsize = curremu == const.BIZHAWK and 48 or 41
 		local ysize = curremu == const.BIZHAWK and 11 or 10
+		local c = colselect
+
 		if u16(const.MAIN_TASK) == 0x000e then
 			local x, y, col, row = 5, 2, 0, 0
 			drawrect(x, y, 256 - x * 2, y + 15, curremu == const.BIZHAWK and 0xff000000 or 0x000000, true)
 			local fgcolor = curremu == const.BIZHAWK and 0x0080ff | 0xff000000 or 0x0080ff
 			local ty = curremu == const.BIZHAWK and y + 2 or y + 6
-			for i = 1, #worldnames do
-				drawtext(x + col + 5, ty, worldnames[i], "%s", fgcolor, 0x000000)
-				col = col + 128
-			end
+			drawtext(x + col + 5, ty, worldnames[c], "%s", fgcolor, 0x000000)
+			col = col + 128
 
 			local height = curremu == const.BIZHAWK and 208 or 216
 
 			col, row = 0, 10
 			--drawline(x, y + row + 6, 256 - x - 1, y + row + 6, 0xffffff)
 			drawrect(x, y + 15, 256 - x * 2, height - y, curremu == const.BIZHAWK and 0x9f000000 or 0x4f000000, true)
-			for w = 1, 2 do
-				for i, s in ipairs(travelpos[w]) do
-					local selected = w == colselect and menuselect[w] == i and 0x1000 or 0
-					if selected > 0 then
-						fgcolor = curremu == const.BIZHAWK and 0x00ff00 | 0xff000000 or 0x00ff00
-						bgcolor = curremu == const.BIZHAWK and 0x000000 or 0xff000000
-						drawtext(x + col + 5, y + row + 8, s[1], "%s", fgcolor, bgcolor)
-					else
-						drawtext(x + col + 5, y + row + 8, s[1], "%s", nil, bgcolor)
-					end
-					row = row + 10
+			for i, s in ipairs(travelpos[c]) do
+				local selected = c == colselect and menuselect[c] == i and 0x1000 or 0
+				if selected > 0 then
+					fgcolor = curremu == const.BIZHAWK and 0x00ff00 | 0xff000000 or 0x00ff00
+					bgcolor = curremu == const.BIZHAWK and 0x000000 or 0xff000000
+					drawtext(x + col + 5, y + row + 8, s[1], "%s", fgcolor, bgcolor)
+				else
+					drawtext(x + col + 5, y + row + 8, s[1], "%s", nil, bgcolor)
 				end
-				col, row = 128, 10
+				row = row + 10
+				if i == (curremu == const.BIZHAWK and 20 or 21) then
+					col, row = 128, 10
+				end
 			end
 
-			local c = colselect
-			if u8(const.PAD_OLD_F4) & 4 > 0 then
+			if u8(const.PAD_NEW_F0) & const.DOWN > 0 or u8(const.PAD_NEW_F0) & const.UP > 0 then
+				dpad_counter = dpad_counter - 1
+				dpad_pressed = u8(const.PAD_NEW_F0)
+				if dpad_counter < 0 then
+					dpad_counter = 8
+				end
+			else
+				dpad_counter = const.DELAY
+			end
+
+			if u8(const.PAD_OLD_F4) & const.DOWN > 0 or dpad_pressed == const.DOWN and dpad_counter == 0 then
 				menuselect[c] = menuselect[c] + 1
 				if menuselect[c] > #travelpos[c] then menuselect[c] = 1 end
-			elseif u8(const.PAD_OLD_F4) & 8 > 0 then
+			elseif u8(const.PAD_OLD_F4) & const.UP > 0 or dpad_pressed == const.UP and dpad_counter == 0 then
 				menuselect[c] = menuselect[c] - 1
 				if menuselect[c] < 1 then menuselect[c] = #travelpos[c] end
-			elseif u8(const.PAD_OLD_F4) & 1 > 0 or u8(const.PAD_OLD_F4) & 2 > 0 then
+			elseif u8(const.PAD_OLD_F4) & const.RIGHT > 0 or u8(const.PAD_OLD_F4) & const.LEFT > 0 then
 				colselect = colselect ~ 3
-			elseif u8(const.PAD_OLD_F4) & 0x80 > 0 then
+			elseif u8(const.PAD_OLD_F4) & const.B > 0 then
 				w16(const.MAIN_TASK, 0x0a0e)
 				w8(0x200, 0x06)
+				customtravel = true
 			end
 		end
 
-		local yr = curremu == const.BIZHAWK and 10 or 9
-		local xi = u16(const.MAIN_TASK) == 0x000e and 80 or 5
-		local yi = u16(const.MAIN_TASK) == 0x000e and 8 or 10
+		local yr = curremu == const.BIZHAWK and 0 or 8
+		local xi = 256 - 47
+		local yi = 9
 		drawrect(xi, yr, xsize, ysize, curremu == const.BIZHAWK and 0x7f000000 or 0x7f000000, true)
 		drawtext(xi, yi, u8(0x7ef423), "%3d/216", curremu == const.BIZHAWK and 0x00ff00 | 0xff000000 or 0x00ff00,
 			curremu == const.BIZHAWK and 0x000000 or 0xff000000)
@@ -373,7 +383,7 @@ local action =
 			drawtext(100, 0, room * 2, "Room:%X")
 			drawtext(190, 0, screen + 0x280, "Screen:%X")
 
-			if u8(const.PAD_NEW_F2) & 0x20 and u8(const.PAD_OLD_F4) & 0x40 > 0 then
+			if u8(const.PAD_NEW_F2) & const.L > 0 and u8(const.PAD_OLD_F4) & const.Y > 0 then
 				emu.log(string.format(
 					"{ 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x },",
 					u16(0xe6), u16(0xe0), u16(0x20), u16(0x22), u16(0x624) & 0xffff, u16(0x628) & 0xffff,
@@ -393,13 +403,13 @@ if curremu == const.GMULATOR or curremu == const.MESEN then
 	addmemcallback(action[3], callbackexec, 0x8abb34) --disable zoom toggle
 	addmemcallback(action[4], callbackexec, 0x808053) --disable overworld map frame counter
 	addmemcallback(action[5], callbackexec, 0x80805d) --set sprites to 8x8
-	addmemcallback(action[6], callbackexec, 0x828801) --open overworld map
-	addmemcallback(action[7], callbackexec, 0x8abc8f) -- open overworld map indoors
+	addmemcallback(action[6], callbackexec, 0x828801) --open overworld map indoors
+	addmemcallback(action[7], callbackexec, 0x8abc8f) -- close overworld map indoors
 	addmemcallback(action[8], callbackexec, 0x8abca7) -- close overworld map
 	addmemcallback(action[9], callbackexec, 0x8aefd8) -- close dungeon map
-	addmemcallback(action[10], callbackexec, 0x82e9f2) --set world
-	addmemcallback(action[11], callbackexec, 0x8aba6c) -- change world
-	addmemcallback(action[12], callbackexec, 0x8ac01e) -- draw correct pendants/crystals
+	addmemcallback(action[10], callbackexec, 0x82a465) -- open overworld map outside	
+	addmemcallback(action[11], callbackexec, 0x82e9f2) --set world
+	addmemcallback(action[12], callbackexec, 0x8aba6c) -- change world
 	addmemcallback(action[13], callbackexec, 0x8ac3b8) --link's position
 	addmemcallback(action[14], callbackexec, 0x80f806) --link's position
 	addmemcallback(action[15], callbackexec, 0x8abf9d) --draw link low priority
@@ -414,14 +424,14 @@ elseif curremu == const.BIZHAWK then
 	addmemcallback(action[2], 0x8abcfa) --map zoom out
 	addmemcallback(action[3], 0x8abb34) --disable zoom toggle
 	addmemcallback(action[4], 0x808053) --disable overworld map frame counter
-	--addmemcallback(action[5], 0x80805d) --set sprites to 8x8
-	addmemcallback(action[6], 0x828801) --open overworld map
-	addmemcallback(action[7], 0x8abc8f) -- open overworld map indoors
+	addmemcallback(action[5], 0x80805d) --set sprites to 8x8
+	addmemcallback(action[6], 0x828801) --open overworld map indoors
+	addmemcallback(action[7], 0x8abc8f) -- close overworld map indoors
 	addmemcallback(action[8], 0x8abca7) -- close overworld map
 	addmemcallback(action[9], 0x8aefd8) -- close dungeon map
-	addmemcallback(action[10], 0x82e9f2) --set world
-	addmemcallback(action[11], 0x8aba6c) -- change world
-	addmemcallback(action[12], 0x8ac01e) -- draw correct pendants/crystals
+	addmemcallback(action[10], 0x82a465) -- open overworld map outside	
+	addmemcallback(action[11], 0x82e9f2) --set world
+	addmemcallback(action[12], 0x8aba6c) -- change world
 	addmemcallback(action[13], 0x8ac3b8) --link's position
 	addmemcallback(action[14], 0x80f806) --link's position
 	addmemcallback(action[15], 0x8abf9d) --draw link low priority
