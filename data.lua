@@ -26,7 +26,8 @@ const = setmetatable({},
             L = 0X20,
             X = 0X40,
             Y = 0x40,
-            B = 0X80
+            B = 0X80,
+            A = 0x80,
         },
         __newindex = function() end
     })

@@ -318,20 +318,20 @@ function update()
 	end
 
 	--travel menu(skip master sword and zora's domain)	
-	--if screen ~= 0x80 and screen ~= 0x81 then
-	if u8(const.INDOORS) == 0 and u8(const.SUB_TASK) == 0 or u8(const.SUB_TASK) == 6 then
-		--activate bird travel
-		if u8(const.PAD_NEW_F2) & 0x20 > 0 and u8(const.PAD_OLD_F6) & 0x10 > 0 then
-			if u8(const.MAIN_TASK) ~= 0x0e then
-				w16(const.MAIN_TASK, 0x000e)
-				w8(0xfc1, 0x01)
-			else
-				w8(const.MAIN_TASK, 0x09)
-				w8(0xfc1, 0x00)
+	if screen ~= 0x80 and screen ~= 0x81 then
+		if u8(const.INDOORS) == 0 and u8(const.SUB_TASK) == 0 or u8(const.SUB_TASK) == 6 then
+			--activate bird travel
+			if u8(const.PAD_NEW_F2) & 0x20 > 0 and u8(const.PAD_OLD_F6) & 0x10 > 0 then
+				if u8(const.MAIN_TASK) ~= 0x0e then
+					w16(const.MAIN_TASK, 0x000e)
+					w8(0xfc1, 0x01)
+				else
+					w8(const.MAIN_TASK, 0x09)
+					w8(0xfc1, 0x00)
+				end
 			end
 		end
 	end
-	--end
 
 	local xsize = curremu == const.BIZHAWK and 48 or 41
 	local ysize = curremu == const.BIZHAWK and 11 or 10
