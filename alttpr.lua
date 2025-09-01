@@ -129,24 +129,27 @@ end
 --function () end,
 local action =
 {
-	[1] = function() main() end,
-	[2] = function() setregister(regs[curremu]["a"], 0x0a) end,
-	[3] = function() setregister(regs[curremu]["a"], 0x00) end,
-	[4] = function()
+	[1] = function() main() end,                             --main
+	[2] = function() setregister(regs[curremu]["a"], 0x0a) end, --map zoom out
+	[3] = function()                                         --disable zoom toggle
+		local screen = u8(0x8a)
+		if screen == 0x00 or screen == 0x81 then return end
+		setregister(regs[curremu]["a"], 0x00)
+	end,
+	[4] = function() --disable overworld map frame counter
 		if u8(const.SUB_TASK) == 7 and u8(const.NMI_FLAG) > 0 and u8(const.ZOOM_MODE) == 0 then
-			local v = u8(0x1a)
 			w8(0x1a, 0xff)
 			setregister(regs[curremu]["pc"], 0x8056)
 		end
 	end,
-	[5] = function()
+	[5] = function() --set sprites to 8x8
 		if u16(const.MAIN_TASK) == 0x030e or u16(const.MAIN_TASK) == 0x070e then
 			for i = 0, 0x1a do
 				w8(const.OAM_ATTR + i, 0x00)
 			end
 		end
 	end,
-	[6] = function()
+	[6] = function() --open overworld map indoors
 		if u8(const.PAD_NEW_F2) & 0x20 == 0 then return end
 		w8(0x10c, u8(const.MAIN_TASK))
 		w16(const.MAIN_TASK, 0x070e)
@@ -170,7 +173,7 @@ local action =
 		world = getworld()
 		map_enabled = true
 	end,
-	[7] = function()
+	[7] = function() -- close overworld map indoors
 		if u8(const.INDOORS) == 1 then
 			w16(const.MAIN_TASK, 0x030e)
 			w8(0x13, 0x01)
@@ -178,10 +181,11 @@ local action =
 			world = getworld()
 		end
 	end,
-	[8] = function()
-		w8(0x8a, u8(0x8a) & 0x3f | u8(0x7ef3ca))
+	[8] = function() -- close overworld map
+		--w8(0x8a, u8(0x8a) & 0x3f | u8(0x7ef3ca))
+		w8(0x8a, u8(0x700ef0))
 	end,
-	[9] = function()
+	[9] = function() -- close dungeon map
 		if u8(const.INDOORS) == 1 and map_enabled then
 			w16(const.MAIN_TASK, 0x030e)
 			w8(0x458, dark_room)
@@ -189,14 +193,15 @@ local action =
 			w8(0x8a, u8(0x8a) & 0x3f | u8(0x7ef3ca))
 		end
 	end,
-	[10] = function()
+	[10] = function() -- open overworld map outside
 		world = getworld()
+		w8(0x700ef0, u8(0x8a))
 	end,
-	[11] = function()
+	[11] = function() --set world
 		local a = getregister(regs[curremu]["a"])
 		setregister(regs[curremu]["a"], a & 0x3f | u8(0x7ef3ca))
 	end,
-	[12] = function()
+	[12] = function() -- change world
 		if world == 2 then
 			w8(0x8a, u8(0x8a) | 0x40)
 			setregister(regs[curremu]["y"], 0x1fe)
@@ -205,7 +210,7 @@ local action =
 		end
 		setregister(regs[curremu]["pc"], 0x8aba76)
 	end,
-	[13] = function()
+	[13] = function() --link's position
 		local x = getregister(regs[curremu]["x"])
 		if u8(const.INDOORS) == 1 and x == 7 then
 			local room = u16(0xa0)
@@ -225,12 +230,12 @@ local action =
 			end
 		end
 	end,
-	[14] = function()
+	[14] = function() --link's position
 		if u8(const.SUB_TASK) == 0x07 then
 			setregister(regs[curremu]["pc"], 0xf81b)
 		end
 	end,
-	[15] = function()
+	[15] = function() --draw link low priority
 		if u16(const.MAIN_TASK) == 0x070e and u8(const.NMI_FLAG) > 0 and u8(const.ZOOM_MODE) == 0 then
 			w8(0x9fc, u8(0x0e) - 4)
 			w8(0x9fd, u8(0x0f) - 3)
@@ -240,7 +245,7 @@ local action =
 			setregister(regs[curremu]["pc"], 0x8abfa2)
 		end
 	end,
-	[16] = function()
+	[16] = function() -- set travel location
 		--local retaddr = u16(getregister(regs[curremu]["sp"]) + 2)
 		--if retaddr == 0xb3c0 then return end
 		if customtravel then
@@ -274,7 +279,7 @@ local action =
 			customtravel = false
 		end
 	end,
-	[17] = function()
+	[17] = function() --update
 		local room = u16(0xa0)
 		local screen = u16(0x8a)
 
@@ -299,21 +304,21 @@ local action =
 			end
 		end
 
-		if screen ~= 0x80 and screen ~= 0x81 then
-			--travel menu
-			if u8(const.INDOORS) == 0 and u8(const.SUB_TASK) == 0 or u8(const.SUB_TASK) == 6 then
-				--activate bird travel
-				if u8(const.PAD_NEW_F2) & 0x20 > 0 and u8(const.PAD_OLD_F6) & 0x10 > 0 then
-					if u8(const.MAIN_TASK) ~= 0x0e then
-						w16(const.MAIN_TASK, 0x000e)
-						w8(0xfc1, 0x01)
-					else
-						w8(const.MAIN_TASK, 0x09)
-						w8(0xfc1, 0x00)
-					end
+		--if screen ~= 0x82 then
+		--travel menu
+		if u8(const.INDOORS) == 0 and u8(const.SUB_TASK) == 0 or u8(const.SUB_TASK) == 6 then
+			--activate bird travel
+			if u8(const.PAD_NEW_F2) & 0x20 > 0 and u8(const.PAD_OLD_F6) & 0x10 > 0 then
+				if u8(const.MAIN_TASK) ~= 0x0e then
+					w16(const.MAIN_TASK, 0x000e)
+					w8(0xfc1, 0x01)
+				else
+					w8(const.MAIN_TASK, 0x09)
+					w8(0xfc1, 0x00)
 				end
 			end
 		end
+		--end
 
 		local xsize = curremu == const.BIZHAWK and 48 or 41
 		local ysize = curremu == const.BIZHAWK and 11 or 10
@@ -351,7 +356,7 @@ local action =
 				dpad_counter = dpad_counter - 1
 				dpad_pressed = u8(const.PAD_NEW_F0)
 				if dpad_counter < 0 then
-					dpad_counter = 8
+					dpad_counter = 3
 				end
 			else
 				dpad_counter = const.DELAY
