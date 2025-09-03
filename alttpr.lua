@@ -28,7 +28,7 @@ function draw_sprite(x, y, d, attr, text)
 		else
 			w8(const.SPRITE_BASE + i + 0, x)
 			w8(const.SPRITE_BASE + i + 1, y)
-			w8(const.SPRITE_BASE + i + 2, digits[d < 9 and d + 1 or d // 10 + 1])
+			w8(const.SPRITE_BASE + i + 2, digits[d < 10 and d + 1 or d // 10 + 1])
 			w8(const.SPRITE_BASE + i + 3, 0x38)
 			sprite_index = sprite_index + 4
 			if d > 9 then
