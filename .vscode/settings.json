@@ -1,0 +1,12 @@
+{
+    "Lua.diagnostics.globals": [
+        "testbit",
+        "draw_sprite",
+        "log",
+        "emu",
+        "getworld"
+    ],
+    "Lua.diagnostics.disable": [
+        "lowercase-global"
+    ]
+}

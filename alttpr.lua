@@ -29,7 +29,7 @@ function draw_sprite(x, y, d, attr, text)
 			w8(const.SPRITE_BASE + i + 0, x)
 			w8(const.SPRITE_BASE + i + 1, y)
 			w8(const.SPRITE_BASE + i + 2, digits[d < 10 and d + 1 or d // 10 + 1])
-			w8(const.SPRITE_BASE + i + 3, 0x38)
+			w8(const.SPRITE_BASE + i + 3, attr)
 			sprite_index = sprite_index + 4
 			if d > 9 then
 				w8(const.SPRITE_BASE + 4 + i + 0, x + 6)
@@ -114,7 +114,8 @@ function map_display_item_counts()
 end
 
 function mapinput()
-	if u8(const.PAD_OLD_F4) == const.RIGHT or u8(const.PAD_OLD_F4) == const.LEFT then
+	local old_f4 = u8(const.PAD_OLD_F4)
+	if old_f4 == const.LEFT or old_f4 == const.RIGHT then
 		world = world ~ 3
 		w16(const.MAIN_TASK, 0x070e)
 		w8(0x200, 0x01)
@@ -126,7 +127,6 @@ function mapinput()
 	end
 end
 
---function() main() end                            --main
 function map_zoom_out()
 	setregister(regs[curremu]["a"], 0x0a)
 end
@@ -218,6 +218,8 @@ end
 function change_world_2() --
 	if world == 2 then
 		setregister(regs[curremu]["a"], 0x40)
+	else
+		setregister(regs[curremu]["a"], 0x00)
 	end
 end
 
@@ -261,6 +263,7 @@ end
 
 function set_travel_location() --
 	if customtravel then
+		if u8(0x10c) == 0x15 then w8(0x10c, 0x09) end
 		local pos = travelpos[colselect][menuselect[colselect]][2]
 		w16(0x00e6, pos[1])
 		w16(0x00e8, pos[1])
@@ -375,15 +378,16 @@ function update()
 			dpad_counter = const.DELAY
 		end
 
-		if u8(const.PAD_OLD_F4) & const.DOWN > 0 or dpad_pressed == const.DOWN and dpad_counter == 0 then
+		local old_f4 = u8(const.PAD_OLD_F4)
+		if old_f4 == const.DOWN or dpad_pressed == const.DOWN and dpad_counter == 0 then
 			menuselect[c] = menuselect[c] + 1
 			if menuselect[c] > #travelpos[c] then menuselect[c] = 1 end
-		elseif u8(const.PAD_OLD_F4) & const.UP > 0 or dpad_pressed == const.UP and dpad_counter == 0 then
+		elseif old_f4 == const.UP or dpad_pressed == const.UP and dpad_counter == 0 then
 			menuselect[c] = menuselect[c] - 1
 			if menuselect[c] < 1 then menuselect[c] = #travelpos[c] end
-		elseif u8(const.PAD_OLD_F4) & const.RIGHT > 0 or u8(const.PAD_OLD_F4) & const.LEFT > 0 then
+		elseif old_f4 == const.RIGHT or old_f4 == const.LEFT then
 			colselect = colselect ~ 3
-		elseif u8(const.PAD_OLD_F4) & const.B > 0 then
+		elseif old_f4 == const.B then
 			w16(const.MAIN_TASK, 0x0a0e)
 			w8(0x200, 0x06)
 			customtravel = true
@@ -401,17 +405,13 @@ function update()
 		drawtext(100, 0, room * 2, "Room:%X")
 		drawtext(190, 0, screen + 0x280, "Screen:%X")
 
-		if u8(const.PAD_NEW_F2) & const.L > 0 and u8(const.PAD_OLD_F4) & const.Y > 0 then
+		if u8(const.PAD_NEW_F2) & const.L > 0 and u8(const.PAD_OLD_F4) == const.Y then
 			emu.log(string.format(
 				"{ 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x }",
 				u16(0xe6), u16(0xe2), u16(0x20), u16(0x22), u16(0x624) & 0xffff, u16(0x628) & 0xffff,
 				u8(0x8a), u16(0x84), u16(0x618), u16(0x61c)))
 		end
 	end
-
-	--enable compass/dungeon maps
-	--w16(0x7ef364, 0xffff)
-	--w16(0x7ef368, 0xffff)
 end
 
 if curremu == const.GMULATOR or curremu == const.MESEN then
